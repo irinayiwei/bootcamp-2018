@@ -1,0 +1,108 @@
+---
+title: "R Day 2"
+author: "Yiwei Zhang"
+date: "9/18/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+here::here("data", "gapminder5.csv")
+gapminder = read.csv(here::here("data", "gapminder5.csv"))
+head(gapminder)
+```
+## Converting factors to characters
+```{r}
+gapminder$continent = as.character(gapminder$continent)
+gapminder$country = as.character(gapminder$country)
+```
+## For loop
+```{r}
+obs = 1:nrow(gapminder)
+for (i in obs) {
+  gapminder[i, "gdp"] = gapminder[i, "pop"] * gapminder[i, "gdpPercap"]
+}
+for (i in obs){
+  gapminder[i, "gdp"] = log(gapminder[i, "gdpPercap"])
+}
+all(gapminder$vec_log_gdpPercap == gapminder$log_gpPercap)
+```
+
+```{r}
+#years
+years = unique(gapminder$year)
+for(i in years){
+  mean_le = mean(gapminder$lifeExp[gapminder$year == i], na.rm=T)
+  print(paste0(i, ": ", mean_le))
+}
+
+#continent
+continent = unique(gapminder$continent)
+for(i in continent){
+  mean_cont = mean(gapminder$lifeExp[gapminder$continent == i], na.rm = T)
+  print(paste0(i, ": ", mean_cont))
+}
+
+#nested for loop
+for(i in continent) {
+  print(paste0("continent: ", i))
+  for (j in years) {
+    mean_le = mean(gapminder$lifeExp[gapminder$continent == i & gapminder$year == j], na.rm=T)
+    print(paste0(j, ": ", mean_le))
+  }
+}
+
+```
+
+## apply
+```{r}
+vars = gapminder[, c("lifeExp", "pop", "gdpPercap")]
+apply(vars, 2, mean)
+```
+## While loop
+```{r}
+i = 1987
+while (i < 2003){
+  sd_lf = sd(gapminder$lifeExp[gapminder$year == i])
+  print(paste0(i, ": ", sd_lf))
+  
+  i = i + 5
+}
+```
+
+## function
+```{r}
+get_stats = function(df, var1, var2){
+  vals = df[[var1]][df$continent == var2]
+  m_le = mean(vals)
+  med_le = median(vals)
+  max_le = max(vals)
+  min_le = min(vals)
+  cat("continent:", var2,
+      "\n Mean Life Expectancy:", m_le,
+      "\n Median Life Expectancy:", med_le,
+      "\n Max Life Expectancy:", max_le,
+      "\n Min Life Expectancy:", min_le)
+}
+get_stats(gapminder, "lifeExp", "Asia")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
