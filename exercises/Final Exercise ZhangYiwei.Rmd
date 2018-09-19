@@ -1,0 +1,75 @@
+---
+title: "FinalExercise ZhangYiwei"
+author: "Yiwei Zhang"
+date: "9/19/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#### Question 1
+```{r}
+school = read.csv(here::here("data/nys_schools.csv"), 
+                       stringsAsFactors = F)
+acs = read.csv(here::here("data/nys_acs.csv"), 
+                       stringsAsFactors = F)
+```
+
+#### Question 2
+  The Schools dataset has 12 variables and 35663 observations. Since there is no return of the second line of code, there is no missing values in the Schools dataset.
+
+  The result is shown below:
+```{r}
+str(school)
+which(is.na(school) == TRUE)
+```
+
+  The ACS dataset has 5 variables and 496 observations. It does not have any missing values (or already coded as another value). The result is shown below:
+```{r}
+str(acs)
+which(is.na(acs) == TRUE)
+```
+
+#### Question 3
+```{r}
+library(dplyr)
+#3.1 deleted entries with missing values
+school_full = filter(school, total_enroll != -99, per_free_lunch != -99, per_reduced_lunch != -99, per_lep != -99, mean_ela_score != -99, mean_math_score != -99)
+
+#3.2
+acs$povLevel = ifelse(acs$county_per_poverty < 0.115, "low", "medium")
+acs$povLevel = ifelse(acs$county_per_poverty < 0.145, acs$povLevel, "high")
+
+#3.3
+school.new = school_full %>%
+  group_by(year) %>%
+  mutate(z_math = scale(mean_math_score), z_ela = scale(mean_ela_score)) %>%
+  ungroup()
+  
+```
+
+#### Question 4
+```{r}
+merged = merge(school.new, acs, by = "county_name")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
