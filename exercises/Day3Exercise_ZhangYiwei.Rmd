@@ -1,0 +1,107 @@
+---
+title: "Day3 R"
+author: "Yiwei Zhang"
+date: "9/19/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#echo is whether print the R code
+```
+
+##Read IN
+```{r}
+gen = read.csv(here::here("data/generation.csv"), 
+                       stringsAsFactors = F)
+import = read.csv(here::here("data/imports.csv"), 
+                       stringsAsFactors = F)
+```
+
+##As date time
+```{r}
+str(gen)
+class(gen$datetime)
+library(lubridate)
+gen$datetime = as_datetime(gen$datetime)
+import$datetime = as_datetime(import$datetime)
+```
+
+##Long and Wide
+```{r}
+library(reshape2)
+long_gen <- melt(gen, id.vars = "datetime",
+                           variable.name = "source",
+                           value.name = "usage")
+head(long_gen)
+```
+## Merging and reshaping
+```{r}
+merged = merge(gen, import, by = "datetime")
+long_merged_energy = melt(merged, id.vars = "datetime", variable.name = "source", value.name = "usage")
+#wide_merged_energy = dcast(merged, id.vars = "datetime", variable.name = "souurce", value.name = "usage")
+```
+
+## dplyr
+###select
+```{r}
+library(dplyr)
+tmp = select(merged, biogas, biomass, geothermal, solar)
+names(tmp)
+tmp = select(merged, -biogas, -biomass, -geothermal, -solar)
+names(tmp)
+tmp = select(merged, contains("hydro"), starts_with("bio"))
+names(tmp)
+```
+
+###filter
+```{r}
+#tmp = filter(merged, import > 7000, natural_gas < 7000) #this is for "&&"
+tmp = filter(merged, import > 7000 || import < 2000)
+```
+
+###mutate
+```{r}
+tmp = mutate(long_merged_energy, log_usage = log(usage), usage2 = usage^2, usage3 = usage^3)
+```
+
+###summarize
+```{r}
+summarize(long_merged_energy, total = sum(usage, na.rm = T))
+summarize(long_merged_energy, mean_cons = mean(usage, na.rm = T))
+```
+
+### Pipe!!
+```{r}
+#assume the dateframe sent from the first is the df used below, so do not need to specify it over and over again in the pipe
+long_merged_energy %>% 
+  filter(source == "geothermal") %>% 
+  select(-datetime) %>% 
+  mutate(log_usage = log(usage)) %>% 
+  summarize(mean_log_usage = mean(log_usage, na.rm = T))
+
+merged %>% 
+  select(-datetime) %>% 
+  mutate(total_usage = rowSums(., na.rm = T)) %>% #use . to refer to the changed dataframe
+  summarize(total_usage = sum(total_usage, na.rm = T))
+
+wide_merged = 
+merged %>% 
+  select(contains("hydro")) %>% 
+  mutate(total_hydro = rowSums(., na.rm = T)) %>%
+  summarize(mean_hydro = mean(total_hydro, na.rm = T))
+```
+
+###group by
+```{r}
+long_merged_energy %>% 
+  group_by(source) %>% 
+  summarize(sum_usage = sum(usage, na.rm = T))
+
+merged %>%
+  select(datetime, contains("hydro"), starts_with("bio")) %>%
+  melt(id.vars = "datetime", variable.name = "source", value.name = "usage") %>%
+  group_by(source) %>%
+  summarize(mean_usage = mean(usage, na.rm = T))
+```
+
